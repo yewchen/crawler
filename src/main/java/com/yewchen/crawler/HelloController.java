@@ -53,8 +53,6 @@ public class HelloController {
 			sb.append(article.getDate()+" "+ article.getAuthor()+" "+article.getTitle()+" https://www.ptt.cc"+article.getUrl()+"<br>");
 		}
 		
-		System.out.println("*******");
-		System.out.println(sb.toString());
 		return sb.toString();
 	}
 }

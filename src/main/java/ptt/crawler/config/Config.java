@@ -12,7 +12,7 @@ public final class Config {
         put("Diablo", new Board(
             "/bbs/Diablo",
         	//"/bbs/Diablo/index4020.html",
-            "�t�ªO",
+            "暗黑板",
             "Diablo",
             true)
         );

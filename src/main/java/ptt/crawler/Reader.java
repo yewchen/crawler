@@ -17,9 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Reader {
-	private ResponseBody body;
     private OkHttpClient okHttpClient;
-    private OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
     private final Map<String, List<Cookie>> cookieStore; // 保存 Cookie
     private final CookieJar cookieJar;
     
@@ -57,27 +55,17 @@ public class Reader {
             }
         };
         
-        /* 代理Proxy
-        SocketAddress sa = new InetSocketAddress("proxy.cht.com.tw", 8080);
-        okHttpClientBuilder.proxy(new Proxy(Proxy.Type.HTTP, sa));
-        okHttpClient = okHttpClientBuilder.cookieJar(cookieJar).build();
-        */
-        
         /* 不需要Proxy */
         okHttpClient = new OkHttpClient.Builder().cookieJar(cookieJar).build();
         
         /* 獲得網站的初始 Cookie */
         Request request = new Request.Builder().get().url(Config.PTT_URL).build();
-        body = okHttpClient.newCall(request).execute().body();
+        okHttpClient.newCall(request).execute();
     }
 
     public List<Article> getList(String boardName) throws IOException, ParseException {
         Board board = Config.BOARD_LIST.get(boardName);
-
-        /* 如果找不到指定的看板 */
-        if (board == null) {
-            return null;
-        }
+        board.setUrl("/bbs/Diablo");
 
         /* 如果看板需要成年檢查 */
         if (board.getAdultCheck() == true) {
@@ -131,7 +119,6 @@ public class Reader {
             }
         } while ( chgDay == false );
 
-        body.close();
         return result;
     }
 

@@ -11,6 +11,42 @@ import ptt.crawler.model.Article;
 
 public class Violation {
 	
+	public List<Article> getDeleteSelfByDate(Reader reader, List<Article> result, String date) {
+		List<Article> violation = new ArrayList<>();
+		try {
+            
+            /* 1. 自刪文 */
+            System.out.println("自刪文清單：");
+            for ( Article article : result ) {
+            	
+            	/* 檢查日期 */
+            	if ( !article.getDate().equals(date) ) continue;
+            	
+            	/* 文章已不存在 */
+            	if ( !article.getIsActive() ) {
+            		
+            		/* 去ALLPOST查該作者之發文 */
+            		List<Article> apResult = reader.getAPList(article.getAuthor());
+            		for ( Article apArticle : apResult ) {
+            			/* 查出跟刪文記錄同一篇的文章 */
+            			if ( apArticle.getDate().equals(article.getDate()) ) {
+            				/* 查該作者有刪文記錄當天 , 有發過交易文的文章 */
+            				if ( apArticle.getTitle().contains("交易") && !apArticle.getTitle().contains("Re:") ) {
+            					/* 檢查該交易文是否還存在 */
+            					if ( reader.checkPostActive(apArticle.getUrl()) == false )
+            						violation.add(apArticle);
+            				}
+            			}
+            		}
+            	}
+            }
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+		
+		return violation;
+	}
 	
 	public List<Article> getNoTagByDate(List<Article> result, String date) {
 		List<Article> violation = new ArrayList<>();
@@ -20,18 +56,14 @@ public class Violation {
             System.out.println(date+" 無分類文清單：");
             for ( Article article : result ) {
             	
-            	/* 檢查日期 */
-            	if ( !article.getDate().equals(date) ) continue;
+            	/* 檢查日期 && 過濾刪除 */
+            	if ( !article.getDate().equals(date) || !article.getIsActive() ) continue;
             	
             	/* 檢查標題分類 */
             	if ( !article.getTitle().contains("[") ) {
             		violation.add(article);
             	}
             }
-            for ( Article article : violation) {
-            	System.out.println(article.getDate()+" "+ article.getAuthor()+" "+article.getTitle()+" https://www.ptt.cc"+article.getUrl());
-            }
-            
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -51,8 +83,8 @@ public class Violation {
             System.out.println(date+" 交易文超貼清單：");
             for ( Article article : result ) {
             	
-            	/* 檢查日期 */
-            	if ( !article.getDate().equals(date) ) continue;
+            	/* 檢查日期 && 過濾刪除 */
+            	if ( !article.getDate().equals(date) || !article.getIsActive() ) continue;
             	
             	/* 若該作者已檢查過, 則不再執行 */
             	if ( checkedAuthor.contains(article.getAuthor()) ) continue;
@@ -86,10 +118,6 @@ public class Violation {
             		}
             	}
             }
-            for ( Article article : violation) {
-            	System.out.println(article.getDate()+" "+ article.getAuthor()+" "+article.getTitle()+" https://www.ptt.cc"+article.getUrl());
-            }
-            
             
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,7 +131,7 @@ public class Violation {
 		
 		/* 抓資料(今天到昨天的所有文章) */
 		Reader reader = new Reader();
-		List<Article> result = reader.getList("Diablo");
+		List<Article> result = reader.getBMList("Diablo");
 		List<Article> violationList = new ArrayList<>();
 		StringBuffer sb = new StringBuffer();
 		

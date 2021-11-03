@@ -63,9 +63,9 @@ public class Reader {
         okHttpClient.newCall(request).execute();
     }
 
-    public List<Article> getList(String boardName) throws IOException, ParseException {
+    public List<Article> getBMList(String boardName) throws IOException, ParseException {
         Board board = Config.BOARD_LIST.get(boardName);
-        board.setUrl("/bbs/Diablo");
+        board.setUrl("/bbs/"+boardName);
 
         /* 如果看板需要成年檢查 */
         if (board.getAdultCheck() == true) {
@@ -100,9 +100,17 @@ public class Reader {
             	
             	/* 過濾置底文 */
             	if ( article.get("title").contains("[公告]") ) continue;
-            	/* 過濾刪除文章 */
+            	/* 抓出自刪文章 */
+            	boolean isActive = true;
+            	String deleteAuthor = "";
             	if ( article.get("author").equals("-") ) {
-            		continue;
+            		deleteAuthor = article.get("source");
+            		if ( article.get("source").contains("[") ) { // 只有自刪才會用[]符號把author標註起來, 板主刪文則會是<>標著author
+            			deleteAuthor = article.get("source").substring(article.get("source").indexOf("[")+1, article.get("source").indexOf("]")-1);
+            			isActive = false;
+            		} else {
+            			continue;
+            		}
             	}
             	/* 跨日跳出 */
             	if ( today_later2.equals(article.get("date")) ) {
@@ -112,15 +120,82 @@ public class Reader {
             	
                 String url = article.get("url");
                 String title = article.get("title");
-                String author = article.get("author");
                 String date = article.get("date");
+                String author = article.get("author");
                 
-                result.add(new Article(board, url, title, author, date));
+                if ( isActive )
+                	result.add(new Article(board, url, title, author, date, isActive));
+                else
+                	result.add(new Article(board, url, title, deleteAuthor, date, isActive));	
             }
         } while ( chgDay == false );
 
         return result;
     }
+    
+    public List<Article> getAPList(String author) throws IOException, ParseException {
+        Board board = Config.BOARD_LIST.get("Allpost");
+        board.setUrl("/bbs/ALLPOST/search?q=author%3A"+author);
+
+        /* 如果看板需要成年檢查 */
+        if (board.getAdultCheck() == true) {
+            runAdultCheck(board.getUrl());
+        }
+        
+        /* 開始撈資料 */
+        List<Article> result = new ArrayList<>();
+        /* 抓取目標頁面 */
+        Request request = new Request.Builder()
+            .url(Config.PTT_URL + board.getUrl())
+            .get()
+            .build();
+
+        Response response = okHttpClient.newCall(request).execute();
+        String body = response.body().string();
+        
+        /* 轉換文章列表 HTML 到 Article */
+        List<Map<String, String>> articles = parseArticle(body);
+        for (Map<String, String> article: articles) {
+        	
+            String url = article.get("url");
+            String title = article.get("title");
+            String date = article.get("date");
+
+            result.add(new Article(board, url, title, author, date, true));
+
+        }
+
+        return result;
+    }
+    
+    public boolean checkPostActive(String url) throws IOException, ParseException {
+        Board board = Config.BOARD_LIST.get("Diablo");
+        board.setUrl(url);
+
+        /* 如果看板需要成年檢查 */
+        if (board.getAdultCheck() == true) {
+            runAdultCheck(board.getUrl());
+        }
+        
+        /* 開始撈資料 */
+        List<Article> result = new ArrayList<>();
+        /* 抓取目標頁面 */
+        Request request = new Request.Builder()
+            .url(Config.PTT_URL + board.getUrl())
+            .get()
+            .build();
+
+        Response response = okHttpClient.newCall(request).execute();
+        String body = response.body().string();
+        
+        if ( body.contains("<title>404</title>") ) {
+        	return false;
+        }
+
+        return true;
+    }
+    
+    
 
     /* 進行年齡確認 */
     private void runAdultCheck(String url) throws IOException {
@@ -142,18 +217,20 @@ public class Reader {
         List<Map<String, String>> result = new ArrayList<>();
         Document doc = Jsoup.parse(body);
         Elements articleList = doc.select(".r-ent");
-
+        
         for (Element element: articleList) {
             String url = element.select(".title a").attr("href");
             String title = element.select(".title a").text();
             String author = element.select(".meta .author").text();
             String date = element.select(".meta .date").text();
+            String source = element.select(".title").html();
 
             result.add(new HashMap<String, String>(){{
                 put("url", url);
                 put("title", title);
                 put("author", author);
                 put("date", date);
+                put("source", source);
             }});
         }
 

@@ -10,11 +10,16 @@ public final class Config {
 	public static final Map<String, Board> BOARD_LIST = new HashMap<String, Board>() {
 	{
         put("Diablo", new Board(
-            "/bbs/Diablo",
-        	//"/bbs/Diablo/index4020.html",
-            "暗黑板",
-            "Diablo",
-            true)
+        		"/bbs/Diablo",
+        		"暗黑板",
+        		"Diablo",
+        		true)
         );
+        put("Allpost", new Board(
+        		"/bbs/ALLPOST",
+                "文章板",
+                "Allpost",
+                true)
+       );
     }};
 }

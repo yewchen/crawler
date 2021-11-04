@@ -17,6 +17,7 @@ public class Violation {
             
             /* 1. 自刪文 */
             System.out.println("自刪文清單：");
+            Set<String> checkedUrl = new HashSet<>();
             for ( Article article : result ) {
             	
             	/* 檢查日期 */
@@ -30,11 +31,17 @@ public class Violation {
             		for ( Article apArticle : apResult ) {
             			/* 查出跟刪文記錄同一篇的文章 */
             			if ( apArticle.getDate().equals(article.getDate()) ) {
-            				/* 查該作者有刪文記錄當天 , 有發過交易文的文章 */
-            				if ( apArticle.getTitle().contains("交易") && !apArticle.getTitle().contains("Re:") ) {
-            					/* 檢查該交易文是否還存在 */
-            					if ( reader.checkPostActive(apArticle.getUrl()) == false )
+            				/* 查該作者有刪文記錄當天 , 有發過交易文or競標文的文章 */
+            				if ( (apArticle.getTitle().contains("交易") && !apArticle.getTitle().contains("Re:")) ||
+            					 (apArticle.getTitle().contains("競標") && !apArticle.getTitle().contains("Re:")) ) {
+            					/* 檢查該交易文or競標文是否還存在 */
+            					if ( reader.checkPostActive(apArticle.getUrl()) == false ) {
+            						/* 若該文章已檢查過, 則不紀錄 */
+            						if ( checkedUrl.contains(apArticle.getUrl()) ) continue;
             						violation.add(apArticle);
+            						checkedUrl.add(apArticle.getUrl());
+            					}
+            						
             				}
             			}
             		}
@@ -45,6 +52,49 @@ public class Violation {
             e.printStackTrace();
         }
 		
+		return violation;
+	}
+	
+	public List<Article> getDeleteBidByDate(List<Article> deleteResult, String date) {
+		List<Article> violation = new ArrayList<>();
+		try {
+            System.out.println(date+" 自刪競標文清單：");
+            for ( Article article : deleteResult ) {
+            	/* 檢查日期 && 過濾刪除 */
+            	if ( !article.getDate().equals(date) || !article.getIsActive() ) continue;
+            	/* 檢查標題分類 */
+            	if ( article.getTitle().contains("競標") ) {
+            		violation.add(article);
+            	}
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+		return violation;
+	}
+	
+	public List<Article> getDeleteTradeBidByDate(List<Article> deleteResult, List<Article> allResult, String date) {
+		List<Article> violation = new ArrayList<>();
+		try {
+            System.out.println(date+" 自刪交易文清單：");
+            for ( Article deleteArticle : deleteResult ) {
+            	/* 檢查日期 && 過濾刪除 */
+            	if ( !deleteArticle.getDate().equals(date) || !deleteArticle.getIsActive() ) continue;
+            	/* 檢查標題分類 */
+            	if ( deleteArticle.getTitle().contains("交易") ) {
+            		/* 檢查今天有沒有發過交易文 */
+            		for ( Article article : allResult ) {
+            			if ( !article.getDate().equals(date) || !article.getIsActive() ) continue;
+            			/* 若自刪交易文的作者等, 同一天仍有發交易文 */
+            			if ( deleteArticle.getAuthor().equals(article.getAuthor()) ) {
+            				if ( article.getTitle().contains("交易") && !article.getTitle().contains("Re:") ) {
+            					violation.add(deleteArticle);
+            					violation.add(article);
+            				}
+            			}
+            		}
+            		
+            	}
+            }
+        } catch (Exception e) { e.printStackTrace(); }
 		return violation;
 	}
 	

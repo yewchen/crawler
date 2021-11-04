@@ -106,7 +106,7 @@ public class Reader {
             	if ( article.get("author").equals("-") ) {
             		deleteAuthor = article.get("source");
             		if ( article.get("source").contains("[") ) { // 只有自刪才會用[]符號把author標註起來, 板主刪文則會是<>標著author
-            			deleteAuthor = article.get("source").substring(article.get("source").indexOf("[")+1, article.get("source").indexOf("]")-1);
+            			deleteAuthor = article.get("source").substring(article.get("source").indexOf("[")+1, article.get("source").indexOf("]"));
             			isActive = false;
             		} else {
             			continue;

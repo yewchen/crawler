@@ -13,19 +13,17 @@ import ptt.crawler.Violation;
 import ptt.crawler.model.Article;
 
 @RestController
-public class HelloController {
+public class TestController {
 	
-	@GetMapping("/test")
+	@GetMapping("/abc")
 	public String test() throws IOException, ParseException {
-		/* 抓資料(今天到昨天的所有文章) */
-		Reader reader = new Reader();
-		List<Article> result = reader.getAPList("selph1120");
-		return result.toString();
+		
+		return "abc";
 	}
 	
 	
 	
-	@GetMapping("/")
+	@GetMapping("/slow")
 	public String index() throws IOException, ParseException {
 		
 	    /* 抓資料(今天到昨天的所有文章) */

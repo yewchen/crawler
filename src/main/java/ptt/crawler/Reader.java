@@ -30,6 +30,10 @@ public class Reader {
         calendar.add(Calendar.DAY_OF_MONTH,x);
     	return new SimpleDateFormat("MM/dd").format(calendar.getTime());
     }
+    public static String nowTime() {
+        Calendar calendar = Calendar.getInstance();
+    	return new SimpleDateFormat("YYYY/MM/dd HH:mm:ss").format(calendar.getTime());
+    }
 
     public Reader() throws IOException {
         /* 初始化 */
